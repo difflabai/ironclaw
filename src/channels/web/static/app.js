@@ -556,11 +556,15 @@ function renderMarkdown(text) {
 // that handles all known bypass vectors (SVG onload, newline-split event
 // handlers, mutation XSS, etc.) unlike the regex approach it replaces.
 function sanitizeRenderedHtml(html) {
-  return DOMPurify.sanitize(html, {
-    USE_PROFILES: { html: true },
-    FORBID_TAGS: ['style', 'script'],
-    FORBID_ATTR: ['style', 'onerror', 'onload']
-  });
+  if (typeof DOMPurify !== 'undefined') {
+    return DOMPurify.sanitize(html, {
+      USE_PROFILES: { html: true },
+      FORBID_TAGS: ['style', 'script'],
+      FORBID_ATTR: ['style', 'onerror', 'onload']
+    });
+  }
+  // DOMPurify not available (CDN unreachable) — return empty string rather than unsanitized HTML
+  return '';
 }
 
 function copyCodeBlock(btn) {
