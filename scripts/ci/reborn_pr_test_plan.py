@@ -787,6 +787,7 @@ def build_plan(
     qa_evidence_changed = False
     nextest_config_changed = False
     shared_reborn_action_changed = False
+    vendored_dependency_changed = False
     reasons: list[str] = []
     root_inventory = _root_test_partitions()
     integration_inventory = _integration_test_lanes()
@@ -804,6 +805,11 @@ def build_plan(
         )
 
     for path in sorted(paths):
+        if path.startswith("vendor/"):
+            # Cargo path patches participate in the production dependency
+            # graph but are not workspace members. Exercise every consumer.
+            vendored_dependency_changed = True
+            continue
         if path == "Cargo.lock":
             if lockfile_manifest_owned:
                 reasons.append(
@@ -1131,6 +1137,11 @@ def build_plan(
             raise ValueError(f"unmapped test or CI path: {path}")
         raise ValueError(f"unclassified pull-request path: {path}")
 
+    if vendored_dependency_changed:
+        return _full_plan(
+            "vendored production dependency changed; this PR runs the exhaustive plan",
+            canonical_packages,
+        )
     if nextest_config_changed:
         return _full_plan(
             "nextest runner config changed; this PR runs the exhaustive plan",
