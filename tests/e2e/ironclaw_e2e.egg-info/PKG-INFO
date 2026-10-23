@@ -6,10 +6,11 @@ Requires-Dist: pytest>=8.0
 Requires-Dist: pytest-asyncio>=0.23
 Requires-Dist: pytest-playwright>=0.5
 Requires-Dist: pytest-timeout>=2.3
-Requires-Dist: playwright>=1.45
-Requires-Dist: aiohttp>=3.9
+Requires-Dist: playwright>=1.64.1
+Requires-Dist: aiohttp>=3.14.4
 Requires-Dist: httpx>=0.27
-Requires-Dist: cryptography>=42.0
+Requires-Dist: certifi>=2026.10.19
+Requires-Dist: cryptography>=50.0.2
 Provides-Extra: vision
 Requires-Dist: anthropic>=0.40; extra == "vision"
 Provides-Extra: telegram

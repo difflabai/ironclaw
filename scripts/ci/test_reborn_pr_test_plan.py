@@ -941,6 +941,22 @@ class RebornPrTestPlanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unclassified pull-request path"):
             self.plan("pull_request", ["Makefile"])
 
+    def test_vendored_dependency_widens_to_exhaustive_plan(self) -> None:
+        for path in (
+            "vendor/rustls-webpki-legacy/src/verify_cert.rs",
+            "vendor/PATCHES.md",
+        ):
+            with self.subTest(path=path):
+                plan = self.plan("pull_request", [path])
+                self.assertEqual(plan["mode"], "full")
+                self.assertEqual(plan["root_partitions"], [0, 1, 2, 3])
+                self.assertEqual(plan["integration_lanes"], [0, 1, 2, 3, "groups"])
+                self.assertIn("vendored production dependency changed", plan["reasons"][0])
+
+        # A known broad dependency change must not hide unknown inputs.
+        with self.assertRaisesRegex(ValueError, "unclassified pull-request path"):
+            self.plan("pull_request", ["vendor/PATCHES.md", "Makefile"])
+
     def test_nextest_config_widens_to_exhaustive_plan(self) -> None:
         """`.config/nextest.toml` is runner config every test lane reads.
 

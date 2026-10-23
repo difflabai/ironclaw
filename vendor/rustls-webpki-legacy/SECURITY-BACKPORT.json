@@ -1,0 +1,269 @@
+{
+  "upstream_legacy_crate": "rustls-webpki0.102.8",
+  "original_crate_sha256": "64ca1bc8749bd4cf37b5ce386cc146580777b4e8572c7b97baf22c83f444bee9",
+  "backport_source": "https://github.com/rustls/webpki/releases/tag/v%2F0.103.16",
+  "upstream_spki_files": {
+    "EMDVTLSCAG3B.spki.der": "2d5f988ee3ceaf696845a34299ca3e05816429cdb5de92427889533175f97b95",
+    "EMDVTLSCAG3C.spki.der": "616e9a92539c40f454813f7fb8ae4a6db719498495215774f02d8b8b5a615d36",
+    "EMEVTLSCAG3B.spki.der": "bdf5ab18303069ebc3e3ddbb0fc0613693acef01b2fb7be1a0624aab60fbff0d",
+    "EMEVTLSCAG3C.spki.der": "b941c7577b918f7b9a9374aff3b02d8eda92545c86adb5b5268d1e121fe58ce2",
+    "EMOVTLSCAG3B.spki.der": "7f09de2d155cc9fbc2dc4585f2c134ea3fc04ea9d9b3e31fa2d6bf9fdc0a02a2",
+    "EMOVTLSCAG3C.spki.der": "6fc13706463e00b2cd2ae357f86de2441e59d501e322c7a02a531a9871e450f6",
+    "EMOVCSCAG3B.spki.der": "e8263cea915a92109a29fb497105dceeeb58fa099c2552c4082aff1e1a9a33b2",
+    "EMOVCSCAG3C.spki.der": "09f75d128061fcdc6d31d8317ce3fe0aea4dab2c66777ce548858dd23f763ce7"
+  },
+  "downstream_version": "0.102.9+security.emudhra.1",
+  "diagnostic_compatibility": "Return existingUnknownIssuer for distrustedkeys; no newpublicerrorenum or callbackAPI. All signature/name/time checks stay enabled.",
+  "scope": "eMudhraSPKI distrust only; other legacywebpki advisories are not backported by this patch.",
+  "test_fixture_vcs_commit": "5fedee2d5410a1c1d7e033ee7d35b3aecd756f27",
+  "test_fixture_archive_url": "https://codeload.github.com/rustls/webpki/tar.gz/5fedee2d5410a1c1d7e033ee7d35b3aecd756f27",
+  "test_fixture_archive_sha256": "0235b5b3cfd6810990f2a141c0141de0a20b783880f88423f358889fad54492d",
+  "nonsemantic_text_normalization": [
+    {
+      "file": "vendor/rustls-webpki-legacy/README.md",
+      "before_sha256": "084c37ee4b35887c813373cb98f3712e20d42e238cd16b59bd90dd8ae870dbf2",
+      "after_sha256": "9f8a6d04fbbacfa799bc163b56b67df8f7e064af86f82bd4bc1c69160eadf6b9",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ecdsa-prime256v1-sha512-spki-params-null.pem",
+      "before_sha256": "6ac6f5033fa11fd1a7c6a4df5f7ee790e3e572dac0a43c1f85d767ddc5683c21",
+      "after_sha256": "849f08d596945e085b09566431e72384c96a9c74d8f83c7c8526b373d205a52a",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ecdsa-prime256v1-sha512-unused-bits-signature.pem",
+      "before_sha256": "da3d8e9b8dddff9581c9218be447538e01cf84d629dab8b310a4c48e59689110",
+      "after_sha256": "1dd39929cc1d165463bfbcedeeeca181f581b769c695ad736226a0d544e0632a",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ecdsa-prime256v1-sha512-using-ecdh-key.pem",
+      "before_sha256": "0ace58a75dcb69766e8ca5ef1e2ef936f4b54d2e3430db5bd1fa99745799af77",
+      "after_sha256": "c8bc531cf331a3ba65637c4fe1752e415760234b8bbf330268b60f6102799016",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ecdsa-prime256v1-sha512-using-ecmqv-key.pem",
+      "before_sha256": "2b5f1f423e3483d6747d9c1bbf5ccb27db830cbb24635fa235da9ee7ffa007f6",
+      "after_sha256": "4929426d7ca2c9681bb1984b76343ec8a67b52735b8c004d0d149d24b200dc1e",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ecdsa-prime256v1-sha512-using-rsa-algorithm.pem",
+      "before_sha256": "45cd7e8bcc1e98498e6bdf16c57dcf3067525e3767113ed1ce1e2fb9d0d01ce0",
+      "after_sha256": "3681903f1b60a9a7840373f8e3d37269b3d0d13ad88df7052a7c4b207f7e6db4",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ecdsa-prime256v1-sha512-wrong-signature-format.pem",
+      "before_sha256": "cb3bfe67be334ce01968aa760138f02324105524516438d8610cbd2fe2360425",
+      "after_sha256": "61fc9dcae1a8de145aeca2020f437f2df412daaf68ecac1bf0adb1b0e74b654b",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ecdsa-prime256v1-sha512.pem",
+      "before_sha256": "111a3dc873ba1a8dd1a9c931b82ce34f0039a08ff919e2cdd528501e58270ad9",
+      "after_sha256": "29b22dd0caaeb41757585b53a7403b03cc0a953424b744e7840b9e45883ba46b",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ecdsa-secp384r1-sha256-corrupted-data.pem",
+      "before_sha256": "143d020b5588b2af8fbe18e65589057c732982b6885d4bf9dc5dd14edf142768",
+      "after_sha256": "93a01c394e06b201a46e57ad09a45038c6f91857389cfbb436fafbedb2ab1f18",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ecdsa-secp384r1-sha256.pem",
+      "before_sha256": "96a6d3c113baa699e0187b0819cce1426523765f41d2287bd7f0902445d55878",
+      "after_sha256": "73fd29d6ec737a8ea7f2ed567228172f83897e2068f594900c3db2717ae5ada6",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ecdsa-using-rsa-key.pem",
+      "before_sha256": "ce2c52394c03f95f3a121b18185d99069f3a108f9dd3bc7c66426afecf3a1b47",
+      "after_sha256": "c6f7eafa76a84a9170c45ebb514ff19db98cd21faf51a16fe55293228de90e10",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ours/ecdsa-prime256v1-sha256-compressed.pem",
+      "before_sha256": "0d5bc5c2db05ef39c2835de1003ef6722516f3db3a5ddb55688cff3e82621fa0",
+      "after_sha256": "4597fdec220fcf1d2a6c36727b510f252d00e43a3e8ce6afae82579c60bbb0f2",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ours/ecdsa-prime256v1-sha256-spki-inside-spki.pem",
+      "before_sha256": "524fd2cacb5b73f740170a24b4829736ac87517c750c4c702a2931c1dca1ce60",
+      "after_sha256": "901fe3ed06510b3ceb478bedbf92616a5b8b015ac82a9d2fbc52656ba4307663",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ours/ecdsa-prime256v1-sha256.pem",
+      "before_sha256": "089a6f368e5b9a9381f6932ca6cf8b91d9daf714ff8233c9b8cd797ad7b325a7",
+      "after_sha256": "e7d01ada7cd2cab6105a0e3acf28e2e70cfd411be0aae4ab1185dce8bc076831",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ours/rsa-pss-sha256-salt32-corrupted-data.pem",
+      "before_sha256": "8b5c942f19ae52eee1847515d4dd4970809768a7fcbcad691113e08ba90c6787",
+      "after_sha256": "24dfe0e0a9178ff5f72db0997d0fae4e2adfcbc444b8edfba477c83810d02a77",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ours/rsa-pss-sha256-salt32.pem",
+      "before_sha256": "3e68c625cfa80c7dd1aee27e0336892249e00b5f3604d5141e317f4416cef728",
+      "after_sha256": "acb3269f792675d14f93390fbc98313ec3465a9b78885cfced546dc94e98aee2",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ours/rsa-pss-sha384-salt48-corrupted-data.pem",
+      "before_sha256": "f624bc417b404cf6ebafd82cff02a611b3975af1217eca0aa88d37e0e8824b5a",
+      "after_sha256": "1ebb89f05e8c97c8d560dd15ab7da14f59031af64b03f591391068f481a71eb3",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ours/rsa-pss-sha384-salt48.pem",
+      "before_sha256": "3673206911aa4bd8b4da9e951e37bbe6258f718d5521dc01da21936a9c92d172",
+      "after_sha256": "70da96691aaa8cf5aebc8658fd89426fb9d8e5e66f5330b7666b0185dc5455bf",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ours/rsa-pss-sha512-salt64-corrupted-data.pem",
+      "before_sha256": "bdcbfdc14c1d6adf01a86b8e7803be9a76dceb788fbf029ac2f67e482c277483",
+      "after_sha256": "f0771f2f777fa3e520261b8067abe5f805a8dfa148ceffc1a32b5dd98bebd2f3",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/ours/rsa-pss-sha512-salt64.pem",
+      "before_sha256": "1a817548b4dc518a09eba5365787dc49fe30d643b21d24bf905284f6d2713ae8",
+      "after_sha256": "51a47fd1b3fb635c542dd74bd37ae6faadfe7ddfa287344460b51b7314ba4d93",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha1-bad-key-der-length.pem",
+      "before_sha256": "d1b50934145834a4a7dedaf0a95ec557279721a2e7b91bd14fb2ba64393e8d32",
+      "after_sha256": "a3f03314e494a5d224ac7c065d0955844889239387c100e929471b105b8ef76a",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha1-bad-key-der-null.pem",
+      "before_sha256": "0c983dbd426b12b939e78c2149da2089250bac97af4b883aaae9bd27b01b761a",
+      "after_sha256": "18e44fa32ce3f9b7cb70039f5cae212c7e38d65adfa677bebbf86084a9a72bb2",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha1-key-params-absent.pem",
+      "before_sha256": "8f85c6ed8b3d8414b11c2881ac2945d59aab762671c847614a26d824110589c8",
+      "after_sha256": "c9694c86677c2d923f6380f9546939624668c705533038b48674bc3962829a3d",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha1-using-pss-key-no-params.pem",
+      "before_sha256": "773165ba6b867a71f88373a34b9dba676677ff5268b1ebd7e42f80ba323115de",
+      "after_sha256": "ec6cfa27e7999b3636e5f6bff0fd203c26655e64d0f8939980e3f46effd6e579",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha1-wrong-algorithm.pem",
+      "before_sha256": "bf0ca6fe4176e3ec0198d60d37def6b836a74bfd96efd2122fb1d1703320d9e3",
+      "after_sha256": "11ca1fd9bae03620bb8ce08537f5d61a75f65bdfd93cdf39737c06cc4b7f89f2",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha1.pem",
+      "before_sha256": "f2a649b1d73ce1de006a1f2f11650e5ddb90ccf7de73bb19a57c157af34316a2",
+      "after_sha256": "120123853440201b5c91ee885023e8da3465dbc81653a3d42aa85bdd312d2526",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha256-key-encoded-ber.pem",
+      "before_sha256": "df9b7c8cc7087a834dc2dd20431ceebf92aaf0e0c635ef367f116c39ca0e7a5b",
+      "after_sha256": "ea6f4b3475658c86d5768becfd51279974513979682d1402a9bee983d791b408",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha256-spki-non-null-params.pem",
+      "before_sha256": "1534fe211f08e732c202e65e674bef2606b3b638add7300b6f7df8417e5404dc",
+      "after_sha256": "ed52ef31b03f55c0da0a2f598e788ab0958d16bf9da30bda7bd6c432bb1edc20",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha256-using-ecdsa-algorithm.pem",
+      "before_sha256": "766d5e41e89bd69ef0cc804ef0de8bb7dc2cb99dca0b9b411a92b338ca5ea16e",
+      "after_sha256": "56066379173c688b69b7ca695224bff0124cf67e68c3cb0e5376462241ada1ce",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha256-using-id-ea-rsa.pem",
+      "before_sha256": "5457122a67150f0418d81fe2210cd6f4feedd59af243ef0ab196f808817f9446",
+      "after_sha256": "59932cebd4f588fa86e622e43fc33202b272dbdc52bacb6d3f7ed894f5c77d61",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pkcs1-sha256.pem",
+      "before_sha256": "34238a932aae2aa81968830f95f1669183286a29e0d9a04000d224b2e4285c62",
+      "after_sha256": "737666900d4c3d9fd1109f0e5eb44d52625ce0dfb9fe107ae6e6dae74f69b2d3",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pss-sha1-salt20-using-pss-key-no-params.pem",
+      "before_sha256": "57c4b6652b6fc13f0f32265997a9fcb51fb873726fb97e1fc29d26593dfcd4c2",
+      "after_sha256": "26d379d10818e622a92f271a5321360f29b910a948d5fec22fcbe2d9edba7b17",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pss-sha1-salt20-using-pss-key-with-null-params.pem",
+      "before_sha256": "67ee8e6f97d7f65f1af0ed4a53cbeb500e5cc156d44490efab0330f8af7ed7a2",
+      "after_sha256": "f09e4272da038738817788159e45f2590d1f5a007f4d3e461cb7d2d63dbd68c4",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pss-sha1-salt20.pem",
+      "before_sha256": "94966ed94d5a59bbd47a06b33b716dd555a71b51bfc237d0ff45c3363cf21218",
+      "after_sha256": "b76dde242675ffede9d56bf1b4861f1dab4082b30f646be72f63a1eb0c2a3b20",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pss-sha1-wrong-salt.pem",
+      "before_sha256": "5583063ebca55b61a3f5f09d186dd250f8e8a29ce0beb7783f80ff5f77e1d9bb",
+      "after_sha256": "3e8a7ea1f6711b3d96a6d8cf8eedbbc62e2c8c6ce57dff5a8cc574637176d375",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pss-sha256-mgf1-sha512-salt33.pem",
+      "before_sha256": "7cb052b2cb306518397e227e53da76cc781a700b732b275e491cda9bd5844cd7",
+      "after_sha256": "aa589551586c6e175da3c075f2e50c1e7bb586b5dd4f818795dfc2e7a090cf1c",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pss-sha256-salt10-using-pss-key-with-params.pem",
+      "before_sha256": "4fd718a3ea88df68dfb384f7dc48c110dadca642f6265c997945fe2231fda422",
+      "after_sha256": "4616514886c5462f62e137ed4951be379d23c4c88048c1ee7777b8ee6c6a1473",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pss-sha256-salt10-using-pss-key-with-wrong-params.pem",
+      "before_sha256": "346695e766c3003c4d62a9a73016f8cab064b71bbde543cae904e4625dfa8b3b",
+      "after_sha256": "7a2d07fec42f775de1b3cb55e4588fcb78fc2aefe03275245e247a9407133c31",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-pss-sha256-salt10.pem",
+      "before_sha256": "1c3ee38f92a74a85a5a5563211431c0ec0f240ebbc803fbc19272b0469ac016b",
+      "after_sha256": "be9433b3cbb26326b9f4bdbfa975e7c5356d6e2ff149083af1a1418ffe75020d",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa-using-ec-key.pem",
+      "before_sha256": "6ef47d55e423c0e4e942388cd09aab942dc33f0bc522249118a9857470c5dce2",
+      "after_sha256": "c6b412966725dad15095f5b6626a0cd714cee1af18bda4bdd0421b40ec69a63a",
+      "PEM_encoded_blocks_unchanged": true
+    },
+    {
+      "file": "vendor/rustls-webpki-legacy/third-party/chromium/data/verify_signed_data/rsa2048-pkcs1-sha512.pem",
+      "before_sha256": "4428f1b0ab076129bf728ae690b3b4469f9746f2e310911d89c2bba2942cd87d",
+      "after_sha256": "963ed9ae185ba8c2020cce31a071e63ad32e5071653ca00ad0f1bd1a291333bb",
+      "PEM_encoded_blocks_unchanged": true
+    }
+  ]
+}

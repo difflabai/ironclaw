@@ -26,11 +26,9 @@ use crate::sandbox_process::RebornSandboxUserKey;
 use super::worker_spec::DOCKER_WORKER_USER as WORKER_USER;
 
 const DEFAULT_IDLE_TIMEOUT_MINUTES: u16 = 5;
-// Pin the exact multi-platform manifest exercised by the Railway preview
-// canary. Operators may override this explicitly, but the default must not
-// drift between review and deployment.
-const DEFAULT_WORKER_IMAGE: &str =
-    "python:3.12-slim@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de";
+// Pin the exact multi-platform manifest used by Dockerfile.sandbox-worker.
+// Operators may override this explicitly; keep the source defaults aligned.
+const DEFAULT_WORKER_IMAGE: &str = "python:3.12.15-slim-bookworm@sha256:6a0e06f5ba0b373d051aabd3fffb9b873f27f9a2a3a14bcbe37dee6f0e3bbc70";
 const DEFAULT_COMMAND_TIMEOUT: Duration = Duration::from_secs(60);
 const MAX_COMMAND_TIMEOUT: Duration = Duration::from_secs(600);
 const DEFAULT_OUTPUT_LIMIT: usize = 16 * 1024;

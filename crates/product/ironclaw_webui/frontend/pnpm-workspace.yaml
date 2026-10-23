@@ -3,3 +3,7 @@ packages:
 
 allowBuilds:
   esbuild: true
+
+# Mermaid still permits an affected KaTeX branch; retain its API with the security patch.
+overrides:
+  katex: "0.18.2"
