@@ -557,3 +557,7 @@ aarch64-apple-darwin = "macos-14"
 "actions/download-artifact" = "37930b1c2abaa49bbe596cd826c3c89aef350131"
 "actions/upload-artifact" = "b7c566a772e6b6bfb58ed0dc250532a479d7789f"
 "swatinem/rust-cache" = "e18b497796c12c097a38f9edb9d0641fb99eee32"
+
+# Legacy libsql TLS branch: attributed SPKI-distrust backport; see vendor/PATCHES.md.
+[patch.crates-io]
+webpki-legacy = { package = "rustls-webpki", path = "vendor/rustls-webpki-legacy" }

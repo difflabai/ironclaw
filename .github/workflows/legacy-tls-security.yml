@@ -1,0 +1,16 @@
+name: Legacy TLS security regression
+on:
+  pull_request:
+    paths: ["Cargo.toml", "Cargo.lock", "vendor/**", ".github/workflows/legacy-tls-security.yml"]
+  push:
+    branches: [main]
+    paths: ["Cargo.toml", "Cargo.lock", "vendor/**", ".github/workflows/legacy-tls-security.yml"]
+permissions:
+  contents: read
+jobs:
+  distrust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+      - run: cargo test --manifest-path vendor/rustls-webpki-legacy/Cargo.toml --features ring --test security_distrust --locked

@@ -1,0 +1,12 @@
+{
+  "source_cache": "/home/ntc/.local/state/certifi-remediation/20261022/conda/quarantined-packages/certifi-2024.2.2-py312h06a4308_0/lib/python3.12/site-packages/certifi/cacert.pem",
+  "original_package": "certifi2024.2.2 officialAnaconda cachedpackage",
+  "sha256": "d7a7a0fb5d7e2731d771e9484ebcdef71d5f0c3e0a2948782bc83ee0ea699ef4",
+  "purpose": "Legacytesttrust fixture only; no validation disabled and no systemstorechanged.",
+  "verified_primary_source": "https://raw.githubusercontent.com/certifi/python-certifi/2024.02.02/certifi/cacert.pem",
+  "G3_root": {
+    "source": "https://raw.githubusercontent.com/certifi/python-certifi/2024.02.02/certifi/cacert.pem",
+    "sha256": "86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b",
+    "purpose": "Explicit controllednegative-test trust only; productiondefault trust is unchanged."
+  }
+}
