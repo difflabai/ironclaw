@@ -1,4 +1,4 @@
-name: Main CI Slack Alerts
+name: Main CI Mattermost Alerts
 
 on:
   workflow_run:
@@ -25,13 +25,13 @@ permissions:
 
 jobs:
   alert:
-    name: Post Slack alert
+    name: Post Mattermost alert
     if: >-
       contains(fromJSON('["push","merge_group"]'), github.event.workflow_run.event) &&
       contains(fromJSON('["failure","timed_out","action_required","startup_failure"]'), github.event.workflow_run.conclusion)
     runs-on: ubuntu-latest
     steps:
-      - name: Post CI failure to Slack
+      - name: Post CI failure to Mattermost
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
@@ -42,13 +42,14 @@ jobs:
           HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
           ACTOR: ${{ github.event.workflow_run.actor.login }}
           EVENT_NAME: ${{ github.event.workflow_run.event }}
-          MAIN_CI_SLACK_WEBHOOK_URLS: ${{ secrets.MAIN_CI_SLACK_WEBHOOK_URLS }}
-          LIVE_CANARY_SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          MAIN_CI_MATTERMOST_WEBHOOK_URLS: ${{ secrets.MAIN_CI_MATTERMOST_WEBHOOK_URLS }}
+          LIVE_CANARY_MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
         run: |
           set -euo pipefail
 
-          slack_escape() {
-            sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g'
+          mattermost_escape() {
+            # Avoid mentions from PR titles/annotations, and escape Markdown link captions.
+            python3 -c 'import re, sys; text = re.sub(r"(?<![\w@])@(?=\w)", "@\u200b", sys.stdin.read()); print(text.replace("[", "\\[").replace("]", "\\]"), end="")'
           }
 
           short_sha="${HEAD_SHA:0:10}"
@@ -98,7 +99,7 @@ jobs:
 
           if [ "$EVENT_NAME" = "merge_group" ]; then
             alert_title="Merge queue CI failed"
-            webhooks="${LIVE_CANARY_SLACK_WEBHOOK_URL:-}"
+            webhooks="${LIVE_CANARY_MATTERMOST_WEBHOOK_URL:-}"
             pr_number=""
             if [[ "$HEAD_BRANCH" =~ ^gh-readonly-queue/main/pr-([0-9]+)- ]]; then
               pr_number="${BASH_REMATCH[1]}"
@@ -108,27 +109,27 @@ jobs:
             if [ -n "$pr_number" ]; then
               pr_json="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}" 2>/dev/null || true)"
               if [ -n "$pr_json" ]; then
-                pr_title="$(jq -r '.title | gsub("[\\r\\n\\t]+"; " ")' <<< "$pr_json" | slack_escape)"
+                pr_title="$(jq -r '.title | gsub("[\\r\\n\\t]+"; " ")' <<< "$pr_json" | mattermost_escape)"
                 pr_url="$(jq -r '.html_url' <<< "$pr_json")"
-                pr_author="$(jq -r '.user.login' <<< "$pr_json" | slack_escape)"
-                pr_display="<${pr_url}|#${pr_number} ${pr_title}> by \`@${pr_author}\`"
+                pr_author="$(jq -r '.user.login' <<< "$pr_json" | mattermost_escape)"
+                pr_display="[#${pr_number} ${pr_title}](${pr_url}) by \`@${pr_author}\`"
               else
                 pr_display="#${pr_number} (details unavailable)"
               fi
             fi
-            context_line="*PR:* ${pr_display}\n*Queue commit:* \`${short_sha}\`"
+            context_line="**PR:** ${pr_display}\n**Queue commit:** \`${short_sha}\`"
           else
             alert_title="Main branch CI failed"
-            webhooks="${MAIN_CI_SLACK_WEBHOOK_URLS:-}"
-            escaped_branch="$(printf '%s' "$HEAD_BRANCH" | slack_escape)"
-            context_line="*Branch:* \`${escaped_branch}\`\n*Commit:* \`${short_sha}\`"
+            webhooks="${MAIN_CI_MATTERMOST_WEBHOOK_URLS:-}"
+            escaped_branch="$(printf '%s' "$HEAD_BRANCH" | mattermost_escape)"
+            context_line="**Branch:** \`${escaped_branch}\`\n**Commit:** \`${short_sha}\`"
           fi
 
-          escaped_workflow="$(printf '%s' "$WORKFLOW_NAME" | slack_escape)"
-          escaped_conclusion="$(printf '%s' "$CONCLUSION" | slack_escape)"
-          escaped_actor="$(printf '%s' "$ACTOR" | slack_escape)"
-          escaped_failed_jobs="$(printf '%s' "$failed_jobs" | slack_escape)"
-          escaped_annotations="$(printf '%s' "$annotations" | slack_escape)"
+          escaped_workflow="$(printf '%s' "$WORKFLOW_NAME" | mattermost_escape)"
+          escaped_conclusion="$(printf '%s' "$CONCLUSION" | mattermost_escape)"
+          escaped_actor="$(printf '%s' "$ACTOR" | mattermost_escape)"
+          escaped_failed_jobs="$(printf '%s' "$failed_jobs" | mattermost_escape)"
+          escaped_annotations="$(printf '%s' "$annotations" | mattermost_escape)"
           escaped_failed_jobs="${escaped_failed_jobs:0:1200}"
           escaped_annotations="${escaped_annotations:0:800}"
 
@@ -143,28 +144,13 @@ jobs:
             --arg failed_jobs "$escaped_failed_jobs" \
             --arg annotations "$escaped_annotations" \
             --arg url "$RUN_URL" \
-            '{
-              text: $text,
-              blocks: [
-                {
-                  type: "header",
-                  text: {type: "plain_text", text: $alert_title}
-                },
-                {
-                  type: "section",
-                  text: {
-                    type: "mrkdwn",
-                    text: "*Workflow:* \($workflow)\n*Conclusion:* `\($conclusion)`\n\($context_line)\n*Actor:* `\($actor)`\n*Failed jobs / steps:*\n\($failed_jobs)\n*Failure annotations (when available):*\n\($annotations)\n<\($url)|Open workflow run>"
-                  }
-                }
-              ]
-            }')"
+            '{text: ("## " + $alert_title + "\n**Workflow:** " + $workflow + "\n**Conclusion:** `" + $conclusion + "`\n" + ($context_line | gsub("\\\\n"; "\n")) + "\n**Actor:** `" + $actor + "`\n**Failed jobs / steps:**\n" + $failed_jobs + "\n**Failure annotations (when available):**\n" + $annotations + "\n[Open workflow run](" + $url + ")")}')"
 
           if [ -z "$webhooks" ]; then
             if [ "$EVENT_NAME" = "merge_group" ]; then
-              echo "::error::Set SLACK_WEBHOOK_URL to receive merge-queue failure alerts in the live-canary channel."
+              echo "::error::Set MATTERMOST_WEBHOOK_URL to receive merge-queue failure alerts in the live-canary channel."
             else
-              echo "::error::Set MAIN_CI_SLACK_WEBHOOK_URLS to receive main CI failure alerts."
+              echo "::error::Set MAIN_CI_MATTERMOST_WEBHOOK_URLS to receive main CI failure alerts."
             fi
             exit 1
           fi
@@ -184,8 +170,8 @@ jobs:
           done < "$webhook_file"
 
           if [ "$posted" -eq 0 ]; then
-            echo "::error::Failed to post alert to any Slack webhook."
+            echo "::error::Failed to post alert to any Mattermost webhook."
             exit 1
           fi
 
-          echo "Posted ${EVENT_NAME} CI failure alert to ${posted} Slack webhook(s)."
+          echo "Posted ${EVENT_NAME} CI failure alert to ${posted} Mattermost webhook(s)."

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for notify_slack.py helpers.
+"""Unit tests for notify_mattermost.py helpers.
 
 Focus is on `parse_summary_status` — the `summary.md` → exit-code
 fallback that classifies lane status when neither JUnit XML nor
@@ -10,11 +10,11 @@ parser drift would silently mislabel lanes.
 
 Run with::
 
-    python3 -m pytest scripts/live-canary/test_notify_slack.py -v
+    python3 -m pytest scripts/live-canary/test_notify_mattermost.py -v
 
 Or directly::
 
-    python3 scripts/live-canary/test_notify_slack.py
+    python3 scripts/live-canary/test_notify_mattermost.py
 """
 
 from __future__ import annotations
@@ -31,13 +31,13 @@ from pathlib import Path
 
 
 # Mirror test_emit_results_json.py's loader so this file also runs
-# standalone without a package layout. notify_slack.py uses
+# standalone without a package layout. notify_mattermost.py uses
 # ``@dataclass``, which introspects ``sys.modules`` for the owning
 # module, so we have to register the module before executing it —
 # otherwise dataclass decoration raises an AttributeError on import.
 _SPEC = importlib.util.spec_from_file_location(
-    "notify_slack",
-    Path(__file__).parent / "notify_slack.py",
+    "notify_mattermost",
+    Path(__file__).parent / "notify_mattermost.py",
 )
 notify = importlib.util.module_from_spec(_SPEC)
 sys.modules[_SPEC.name] = notify
@@ -145,7 +145,7 @@ class GoogleOauthPreflightReportTests(unittest.TestCase):
     def test_main_reports_google_preflight_failure_without_lane_artifacts(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             argv = [
-                "notify_slack.py",
+                "notify_mattermost.py",
                 "--artifacts-dir",
                 tmpdir,
                 "--dry-run",
@@ -228,7 +228,7 @@ class GoogleOauthPreflightReportTests(unittest.TestCase):
                 self.assertEqual(got, 0, f"variant not parsed: {variant!r}")
 
 
-class RebornQaSlackReportTests(unittest.TestCase):
+class RebornQaMattermostReportTests(unittest.TestCase):
     def test_case_outcome_centralizes_display_priority(self):
         cases = [
             (
@@ -487,9 +487,9 @@ class RebornQaSlackReportTests(unittest.TestCase):
             case = report.reborn_qa_cases[0]
             self.assertEqual(case.case_tier, "contract")
             self.assertTrue(case.blocking)
-            rendered = json.dumps(notify.slack_payload([report], None, None))
+            rendered = json.dumps(notify.mattermost_payload([report], None, None))
             self.assertIn(
-                f"*Failure `10C`:* {label} result blocking metadata",
+                f"**Failure `10C`:** {label} result blocking metadata",
                 rendered,
             )
             self.assertNotIn("Warning `10C`", rendered)
@@ -646,7 +646,7 @@ class RebornQaSlackReportTests(unittest.TestCase):
             target_branch="codex/fix-q10-slack-canaries",
             target_ref="abcdef0123456789",
         )
-        payload = notify.slack_payload(
+        payload = notify.mattermost_payload(
             [report],
             "https://github.com/nearai/ironclaw/actions/runs/123",
             "mainsha0123456789",
@@ -700,7 +700,7 @@ class RebornQaSlackReportTests(unittest.TestCase):
         post_json.assert_not_called()
         get_json.assert_not_called()
 
-    def test_slack_payload_renders_each_reborn_qa_row(self):
+    def test_mattermost_payload_renders_each_reborn_qa_row(self):
         report = notify.LaneReport(
             lane="reborn-webui-v2-live-qa",
             provider="reborn-webui-v2",
@@ -759,39 +759,36 @@ class RebornQaSlackReportTests(unittest.TestCase):
             ],
         )
 
-        payload = notify.slack_payload(
+        payload = notify.mattermost_payload(
             [report],
             "https://github.com/nearai/ironclaw/actions/runs/123",
             "abcdef0123456789",
         )
-        section_texts = [
-            block["text"]["text"]
-            for block in payload["blocks"]
-            if block.get("type") == "section"
-        ]
+        self.assertNotIn("blocks", payload)
+        section_texts = [attachment["text"] for attachment in payload["attachments"]]
 
-        qa_sections = [text for text in section_texts if "*QA 2*" in text]
+        qa_sections = [text for text in section_texts if "**QA 2**" in text]
         self.assertEqual(len(qa_sections), 1)
         self.assertTrue(
             any(
-                "*reborn-webui-v2-live-qa* (reborn-webui-v2) — 1/3 passed"
+                "**reborn-webui-v2-live-qa** (reborn-webui-v2) — 1/3 passed"
                 in text
                 for text in section_texts
             )
         )
         qa_text = qa_sections[0]
         self.assertIn("1/3 passed", qa_text)
-        self.assertIn("\n*Cases:*", qa_text)
-        self.assertIn("\n*Tools observed:*", qa_text)
-        self.assertNotIn("\n*Tool I/O digests:*", qa_text)
+        self.assertIn("\n**Cases:**", qa_text)
+        self.assertIn("\n**Tools observed:**", qa_text)
+        self.assertNotIn("\n**Tool I/O digests:**", qa_text)
         self.assertIn("`2A` Gmail connection flow", qa_text)
         self.assertIn("`2D` Calendar prep assistant using Google Docs and live news", qa_text)
         self.assertIn(
-            "*Failure `2D`:* requires live Google runtime access",
+            "**Failure `2D`:** requires live Google runtime access",
             qa_text,
         )
         self.assertIn(
-            "*Debug `2D`:* <https://github.com/nearai/ironclaw/actions/runs/123|GitHub run artifacts> → "
+            "**Debug `2D`:** [GitHub run artifacts](https://github.com/nearai/ironclaw/actions/runs/123) → "
             "`reborn-webui-v2-live-qa/reborn-webui-v2/20260628T000000Z/results.json`, "
             "`reborn-webui-v2-live-qa/reborn-webui-v2/20260628T000000Z/test-output.log`, "
             "`reborn-webui-v2-live-qa/reborn-webui-v2/20260628T000000Z/traces/qa_2d_calendar_prep_live_chat.json`, "
@@ -799,16 +796,16 @@ class RebornQaSlackReportTests(unittest.TestCase):
             qa_text,
         )
         self.assertIn(
-            "*Failure `2E`:* assistant returned success but routine scope "
+            "**Failure `2E`:** assistant returned success but routine scope "
             "'reborn-qa-2e-calendar-prep-email' did not add a trigger_record",
             qa_text,
         )
         self.assertNotIn("*Debug `2A`", qa_text)
-        self.assertIn("*Tools observed:* 2 tools", qa_text)
+        self.assertIn("**Tools observed:** 2 tools", qa_text)
         self.assertNotIn("in#1234567890", qa_text)
         self.assertNotIn("out#9876543210", qa_text)
 
-    def test_slack_payload_includes_pr_branch_context_when_present(self):
+    def test_mattermost_payload_includes_pr_branch_context_when_present(self):
         report = notify.LaneReport(
             lane="reborn-webui-v2-live-qa",
             provider="reborn-webui-v2",
@@ -819,7 +816,7 @@ class RebornQaSlackReportTests(unittest.TestCase):
             status="pass",
         )
 
-        payload = notify.slack_payload(
+        payload = notify.mattermost_payload(
             [report],
             "https://github.com/nearai/ironclaw/actions/runs/123",
             "mainsha0123456789",
@@ -832,21 +829,16 @@ class RebornQaSlackReportTests(unittest.TestCase):
             ),
         )
 
-        context_texts = [
-            element["text"]
-            for block in payload["blocks"]
-            if block.get("type") == "context"
-            for element in block.get("elements", [])
-        ]
+        context_texts = [attachment["text"] for attachment in payload["attachments"]]
         combined_context = "\n".join(context_texts)
         self.assertIn(
-            "PR <https://github.com/nearai/ironclaw/pull/42|#42>",
+            "PR [#42](https://github.com/nearai/ironclaw/pull/42)",
             combined_context,
         )
         self.assertIn("branch `codex/canary-smoke`", combined_context)
         self.assertIn("target `abcdef0123`", combined_context)
         self.assertIn(
-            "/canary PR #42 abcdef0123 comment 987 by @maintainer",
+            "/canary PR #42 abcdef0123 comment 987 by @\u200bmaintainer",
             combined_context,
         )
         self.assertIn("commit `abcdef0`", combined_context)
@@ -1090,7 +1082,7 @@ class RebornQaSlackReportTests(unittest.TestCase):
         post_json.assert_called_once()
         self.assertIn("/issues/42/comments", post_json.call_args.args[0])
 
-    def test_main_posts_pr_comment_without_slack_webhook(self):
+    def test_main_posts_pr_comment_without_mattermost_webhook(self):
         report = notify.LaneReport(
             lane="reborn-webui-v2-live-qa",
             provider="reborn-webui-v2",
@@ -1109,7 +1101,7 @@ class RebornQaSlackReportTests(unittest.TestCase):
         }
         with (
             mock.patch.dict(notify.os.environ, env, clear=True),
-            mock.patch.object(sys, "argv", ["notify_slack.py"]),
+            mock.patch.object(sys, "argv", ["notify_mattermost.py"]),
             mock.patch.object(
                 notify,
                 "discover_lane_dirs",
@@ -1148,7 +1140,7 @@ class RebornQaSlackReportTests(unittest.TestCase):
         }
         with (
             mock.patch.dict(notify.os.environ, env, clear=True),
-            mock.patch.object(sys, "argv", ["notify_slack.py"]),
+            mock.patch.object(sys, "argv", ["notify_mattermost.py"]),
             mock.patch.object(
                 notify,
                 "discover_lane_dirs",
@@ -1205,21 +1197,18 @@ class RebornQaSlackReportTests(unittest.TestCase):
             )
         )
 
-        payload = notify.slack_payload(
+        payload = notify.mattermost_payload(
             reports,
             "https://github.com/nearai/ironclaw/actions/runs/1",
             "abcdef0123456789",
         )
 
-        self.assertLessEqual(len(payload["blocks"]), notify.SLACK_MAX_BLOCKS)
-        section_texts = [
-            block["text"]["text"]
-            for block in payload["blocks"]
-            if block.get("type") == "section"
-        ]
-        self.assertTrue(any("*QA 2*" in text for text in section_texts))
-        self.assertTrue(any("*QA 8*" in text for text in section_texts))
-        self.assertFalse(any("*QA 2A" in text for text in section_texts))
+        self.assertLessEqual(len(payload["attachments"]), notify.REPORT_MAX_SECTIONS)
+        self.assertNotIn("blocks", payload)
+        section_texts = [attachment["text"] for attachment in payload["attachments"]]
+        self.assertTrue(any("**QA 2**" in text for text in section_texts))
+        self.assertTrue(any("**QA 8**" in text for text in section_texts))
+        self.assertFalse(any("**QA 2A" in text for text in section_texts))
 
     def test_reborn_group_continuation_blocks_repeat_group_label(self):
         cases = [
@@ -1248,8 +1237,8 @@ class RebornQaSlackReportTests(unittest.TestCase):
         self.assertTrue(any("continued" in text for text in section_texts[1:]))
 
 
-class NotifySlackMainTests(unittest.TestCase):
-    def test_missing_slack_webhook_still_creates_issues(self):
+class NotifyMattermostMainTests(unittest.TestCase):
+    def test_missing_mattermost_webhook_still_creates_issues(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             lane_dir = Path(tmpdir) / "public-smoke" / "openai" / "20260706T000000Z"
             lane_dir.mkdir(parents=True)
@@ -1276,11 +1265,11 @@ class NotifySlackMainTests(unittest.TestCase):
                 issue_calls.append((reports, kwargs))
                 return ["https://github.com/nearai/ironclaw/issues/123"]
 
-            def fail_slack_post(*_args, **_kwargs):
-                raise AssertionError("missing Slack webhook should not post to Slack")
+            def fail_mattermost_post(*_args, **_kwargs):
+                raise AssertionError("missing Mattermost webhook should not post to Mattermost")
 
             argv = [
-                "notify_slack.py",
+                "notify_mattermost.py",
                 "--artifacts-dir",
                 tmpdir,
                 "--repo",
@@ -1294,9 +1283,9 @@ class NotifySlackMainTests(unittest.TestCase):
                 "abcdef0123456789",
             ]
             with (
-                mock.patch.dict(notify.os.environ, {}, clear=True),
+                mock.patch.dict(notify.os.environ, {"SLACK_WEBHOOK_URL": "https://old.example.test/hooks/never-used"}, clear=True),
                 mock.patch.object(notify.sys, "argv", argv),
-                mock.patch.object(notify, "post_json", fail_slack_post),
+                mock.patch.object(notify, "post_json", fail_mattermost_post),
                 mock.patch.object(
                     notify,
                     "create_canary_issues",
@@ -1311,6 +1300,56 @@ class NotifySlackMainTests(unittest.TestCase):
         self.assertEqual([report.status for report in reports], ["fail"])
         self.assertEqual(kwargs["repo"], "nearai/ironclaw")
         self.assertEqual(kwargs["github_token"], "token-1")
+
+
+    def test_main_delivers_mattermost_payload_to_http_receiver(self):
+        import threading
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        received = []
+
+        class Receiver(BaseHTTPRequestHandler):
+            def do_POST(self):
+                received.append(json.loads(self.rfile.read(int(self.headers["Content-Length"]))))
+                self.send_response(200)
+                self.end_headers()
+                self.wfile.write(b"ok")
+
+            def log_message(self, *args):
+                pass
+
+        endpoint = ThreadingHTTPServer(("127.0.0.1", 0), Receiver)
+        thread = threading.Thread(target=endpoint.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                lane = Path(tmpdir) / "public-smoke" / "openai" / "20261102T000000Z"
+                lane.mkdir(parents=True)
+                (lane / "results.json").write_text(json.dumps({"results": [{"provider": "openai", "mode": "public-smoke", "success": False, "details": {"error": "loopback failure"}}]}))
+                env = {"MATTERMOST_WEBHOOK_URL": f"http://127.0.0.1:{endpoint.server_port}/hooks/test-only", "CANARY_TRIGGER_CONTEXT": "requested by @channel alice@example.com"}
+                argv = ["notify_mattermost.py", "--artifacts-dir", tmpdir, "--run-url", "https://github.com/difflabai/ironclaw/actions/runs/1"]
+                with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(sys, "argv", argv):
+                    self.assertEqual(notify.main(), 0)
+        finally:
+            endpoint.shutdown()
+            endpoint.server_close()
+        self.assertEqual(len(received), 1)
+        self.assertNotIn("blocks", received[0])
+        self.assertIn("1 failed", received[0]["text"])
+        rendered = json.dumps(received[0])
+        self.assertIn("public-smoke", rendered)
+        self.assertIn("@\u200bchannel", received[0]["attachments"][0]["text"])
+        self.assertIn("alice@example.com", received[0]["attachments"][0]["text"])
+        self.assertIn("actions/runs/1", rendered)
+
+    def test_main_webhook_failures_do_not_log_secret_urls(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env = {"MATTERMOST_WEBHOOK_URL": "https://chat.example.test/hooks/secret-test-only", "REBORN_GOOGLE_OAUTH_PREFLIGHT_STATUS": "invalid_grant"}
+            argv = ["notify_mattermost.py", "--artifacts-dir", tmpdir]
+            stderr = io.StringIO()
+            with mock.patch.dict(os.environ, env, clear=True), mock.patch.object(sys, "argv", argv), mock.patch("sys.stderr", stderr), mock.patch.object(notify, "post_json", side_effect=RuntimeError(env["MATTERMOST_WEBHOOK_URL"])):
+                self.assertEqual(notify.main(), 0)
+            self.assertNotIn("secret-test-only", stderr.getvalue())
+            self.assertIn("fallback", stderr.getvalue())
 
 
 if __name__ == "__main__":

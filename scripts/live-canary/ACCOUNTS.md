@@ -153,7 +153,7 @@ then rotate these repo-scoped GitHub Actions secrets together:
 - `AUTH_LIVE_GOOGLE_REFRESH_TOKEN`
 
 Slack workflow cases require bot-level Slack credentials for the Reborn Slack
-adapter. `SLACK_WEBHOOK_URL` is only for canary reporting and is not sufficient
+adapter. `MATTERMOST_WEBHOOK_URL` is only for canary reporting and is not sufficient
 for WebUI Slack workflow coverage.
 
 - `IRONCLAW_REBORN_SLACK_SIGNING_SECRET`

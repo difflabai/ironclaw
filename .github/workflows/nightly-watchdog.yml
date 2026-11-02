@@ -2,7 +2,7 @@ name: Nightly Watchdog
 
 # Single alerting path for the scheduled nightlies (Codebase Graph Refresh,
 # Nightly Deep CI, Reborn Playwright, IronClaw Stress): checks each workflow's latest scheduled run
-# and posts failures to Slack. Watching from OUTSIDE the runs
+# and posts failures to Mattermost. Watching from OUTSIDE the runs
 # is deliberate — an in-run alert job dies with its own run on a
 # startup_failure (zero jobs execute; Nightly Deep CI was dark from its
 # creation 2026-05-06 through 2026-07-08 exactly this way) and can never see
@@ -10,7 +10,7 @@ name: Nightly Watchdog
 #
 # A workflow alarms when its latest scheduled run is missing, older than 26
 # hours (cron never fired), or concluded anything but success. Failures post
-# to the Slack channel behind secrets.SLACK_WEBHOOK_URL (the same webhook the
+# to the Mattermost channel behind secrets.MATTERMOST_WEBHOOK_URL (the same webhook the
 # live-canary report uses) and turn this watchdog's matrix job red, so the
 # watchdog's own run history doubles as the failure record. Successes post
 # nothing.
@@ -37,12 +37,12 @@ jobs:
           - Reborn Playwright
           - IronClaw Stress
     steps:
-      - name: Check latest scheduled run and post failures to Slack
+      - name: Check latest scheduled run and post failures to Mattermost
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           WATCHED_WORKFLOW: ${{ matrix.workflow }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
           MAX_AGE_SECONDS: "93600" # 26h — one cron period plus slack
         run: |
           run_json="$(gh run list \
@@ -79,16 +79,16 @@ jobs:
             detail="concluded ${conclusion}${failed_jobs:+ — failed jobs: ${failed_jobs}}"
           fi
 
-          text="❌ *${WATCHED_WORKFLOW}* nightly: ${detail}${run_url:+ — <${run_url}|run>}"
+          text="❌ **${WATCHED_WORKFLOW}** nightly: ${detail}${run_url:+ — [run](${run_url})}"
           echo "$text"
 
-          if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
+          if [ -n "${MATTERMOST_WEBHOOK_URL:-}" ]; then
             payload="$(jq -n --arg text "$text" '{text: $text}')"
-            curl -fsS -X POST -H 'Content-type: application/json' \
-              --data "$payload" "$SLACK_WEBHOOK_URL" > /dev/null \
-              || echo "Warning: Slack delivery failed" >&2
+            curl -fsS --max-time 30 -X POST -H 'Content-type: application/json' \
+              --data "$payload" "$MATTERMOST_WEBHOOK_URL" > /dev/null \
+              || echo "Warning: Mattermost delivery failed" >&2
           else
-            echo "SLACK_WEBHOOK_URL secret is not set — failure was NOT posted to Slack." >&2
+            echo "MATTERMOST_WEBHOOK_URL secret is not set — failure was NOT posted to Mattermost." >&2
           fi
 
           # Red matrix job = the durable failure record now that there is no

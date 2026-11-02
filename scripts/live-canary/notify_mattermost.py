@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Canary report: walk lane artifacts, summarize via Haiku, post to Slack.
+"""Canary report: walk lane artifacts, summarize via Haiku, post to Mattermost.
 
 Invoked by the `canary-report` GitHub Actions job after every live-canary
 lane finishes. Expects artifacts under ``--artifacts-dir`` following the
@@ -7,7 +7,7 @@ standard ``<lane>/<provider>/<timestamp>/`` layout produced by
 ``scripts/live-canary/run.sh``.
 
 Zero external dependencies — uses only the stdlib so it can run in any CI
-shell. Exits 0 even on Haiku / Slack failure so the notifier never blocks
+shell. Exits 0 even on Haiku / Mattermost failure so the notifier never blocks
 CI; errors degrade to a raw "X/Y lanes failed — <run URL>" fallback.
 """
 
@@ -29,7 +29,7 @@ MODEL = "claude-haiku-4-5-20251001"
 ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
 ANTHROPIC_VERSION = "2023-06-01"
 MAX_LOG_BYTES = 20_000
-SLACK_MAX_BLOCKS = 50
+REPORT_MAX_SECTIONS = 50
 GITHUB_COMMENT_BODY_LIMIT = 65_000
 GITHUB_MD_MENTION_BREAK = "@\u200b"
 
@@ -263,7 +263,7 @@ def parse_results_json(path: Path, report: LaneReport) -> None:
                 msg = str(details.get("error") or "")
                 if not msg:
                     # No structured error — surface a short status pair so
-                    # the Slack reason isn't blank for soft failures
+                    # the Mattermost reason isn't blank for soft failures
                     # (e.g. run_terminal but assertion didn't match).
                     fragments: list[str] = []
                     for k, v in details.items():
@@ -288,7 +288,7 @@ def parse_results_json(path: Path, report: LaneReport) -> None:
             report.duration_s += latency / 1000.0
 
 
-def _trim_slack_text(value: object, limit: int = 180) -> str:
+def _trim_report_text(value: object, limit: int = 180) -> str:
     text = str(value or "").strip()
     text = re.sub(r"\s+", " ", text)
     if len(text) <= limit:
@@ -296,7 +296,7 @@ def _trim_slack_text(value: object, limit: int = 180) -> str:
     return text[: max(0, limit - 1)].rstrip() + "…"
 
 
-def _trim_slack_block_text(value: object, limit: int = 2900) -> str:
+def _trim_section_text(value: object, limit: int = 2900) -> str:
     text = str(value or "").strip()
     text = "\n".join(re.sub(r"[ \t]+", " ", line).strip() for line in text.splitlines())
     if len(text) <= limit:
@@ -325,10 +325,10 @@ def _reborn_failure_message(entry: dict) -> str:
     for key in ("error", "message", "reason", "gate"):
         value = details.get(key)
         if value:
-            return _trim_slack_text(value, 360)
+            return _trim_report_text(value, 360)
     blocked = details.get("blocked")
     if blocked:
-        return _trim_slack_text(f"blocked={blocked}", 360)
+        return _trim_report_text(f"blocked={blocked}", 360)
     return ""
 
 
@@ -359,7 +359,7 @@ def parse_reborn_trace_tool_calls(trace_path: Path) -> list[RebornQaToolCall]:
     Trace payloads can contain live integration data. The checkpoint state
     exposes stable argument hashes and output digests, which are enough for
     correlating "what tool ran with which input/output identity" without
-    posting raw Gmail, Slack, Docs, Sheets, or web content into Slack.
+    posting raw Gmail, Mattermost, Docs, Sheets, or web content into Mattermost.
     """
     if not trace_path.exists() or trace_path.stat().st_size == 0:
         return []
@@ -522,7 +522,7 @@ def parse_reborn_qa_case_reports(lane_dir: Path, report: LaneReport) -> None:
             RebornQaCaseReport(
                 rows=row_tuple,
                 case=case,
-                feature=_trim_slack_text(feature, 120),
+                feature=_trim_report_text(feature, 120),
                 success=bool(entry.get("success")),
                 latency_ms=latency if isinstance(latency, (int, float)) else None,
                 message=_reborn_failure_message(entry),
@@ -725,7 +725,7 @@ def run_haiku(api_key: str, report: LaneReport) -> None:
         report.tools_used = [str(x) for x in tu][:10]
     report.notable = str(data.get("notable", ""))[:200]
     # Per-failure diagnostic fields. Haiku returns empty strings for
-    # passing/skipped lanes, so accept and store as-is — slack_payload
+    # passing/skipped lanes, so accept and store as-is — mattermost_payload
     # only renders the rich block when the field is non-empty.
     report.test_name = str(data.get("test_name", ""))[:200]
     report.error = str(data.get("error", ""))[:300]
@@ -916,7 +916,7 @@ def _format_reborn_qa_group(
         outcome_counts += f", {inconclusive} inconclusive"
     lines = [
         f"{status} *QA {group}* — {passed}/{len(cases)} passed{outcome_counts}{duration}",
-        f"*Cases:* {_trim_slack_text('; '.join(case_summaries), 900)}",
+        f"*Cases:* {_trim_report_text('; '.join(case_summaries), 900)}",
     ]
     lines.extend(_format_reborn_failure_lines(cases, run_url))
     lines.extend(_format_reborn_metric_summary(cases))
@@ -932,7 +932,7 @@ def _format_reborn_qa_group(
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": _trim_slack_block_text("\n".join(current), 2900),
+                        "text": _trim_section_text("\n".join(current), 2900),
                     },
                 }
             )
@@ -945,7 +945,7 @@ def _format_reborn_qa_group(
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": _trim_slack_block_text("\n".join(current), 2900),
+                    "text": _trim_section_text("\n".join(current), 2900),
                 },
             }
         )
@@ -978,16 +978,16 @@ def _format_run_context(context: CanaryRunContext | None) -> str:
         else:
             parts.append(f"PR #{context.target_pr}")
     if context.target_branch:
-        parts.append(f"branch `{_trim_slack_text(context.target_branch, 120)}`")
+        parts.append(f"branch `{_trim_report_text(context.target_branch, 120)}`")
     if context.target_ref:
-        parts.append(f"target `{_trim_slack_text(context.target_ref, 40)[:10]}`")
+        parts.append(f"target `{_trim_report_text(context.target_ref, 40)[:10]}`")
     if context.trigger_context:
-        parts.append(_trim_slack_text(context.trigger_context, 160))
+        parts.append(_trim_report_text(context.trigger_context, 160))
     return " • ".join(parts)
 
 
 def _github_md_text(value: object, limit: int | None = None) -> str:
-    text = _trim_slack_text(value, limit) if limit else str(value or "").strip()
+    text = _trim_report_text(value, limit) if limit else str(value or "").strip()
     return (
         text.replace("\\", "\\\\")
         .replace("\n", " ")
@@ -1000,7 +1000,7 @@ def _github_md_text(value: object, limit: int | None = None) -> str:
 
 
 def _github_md_code(value: object, limit: int | None = None) -> str:
-    text = _trim_slack_text(value, limit) if limit else str(value or "").strip()
+    text = _trim_report_text(value, limit) if limit else str(value or "").strip()
     return text.replace("`", "'").replace("\n", " ").replace("|", "\\|")
 
 
@@ -1010,7 +1010,14 @@ def _has_blocking_failure(report: LaneReport) -> bool:
     return not report.structured_results and report.status == "fail"
 
 
-def slack_payload(
+def _mattermost_markdown(text: str) -> str:
+    """Render report links/bold in Mattermost's Markdown dialect."""
+    text = re.sub(r"(?<![\w@])@(?=\w)", "@\u200b", text)
+    text = re.sub(r"<([^>|]+)\|([^>]+)>", r"[\2](\1)", text)
+    return re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"**\1**", text)
+
+
+def mattermost_payload(
     reports: list[LaneReport],
     run_url: str | None,
     commit: str | None,
@@ -1055,7 +1062,7 @@ def slack_payload(
         lines = [header_line]
         # Rich failure block: shown when Haiku populated the diagnostic
         # fields. The shape mirrors the issue-friendly format reviewers
-        # asked for so a Slack reader can paste it straight into a
+        # asked for so a Mattermost reader can paste it straight into a
         # GitHub issue if needed.
         if (
             _has_blocking_failure(r)
@@ -1083,12 +1090,12 @@ def slack_payload(
             lines.append(f"_{r.notable}_")
         blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(lines)}})
         if renders_reborn_qa_groups:
-            remaining = max(0, SLACK_MAX_BLOCKS - len(blocks))
+            remaining = max(0, REPORT_MAX_SECTIONS - len(blocks))
             blocks.extend(_format_reborn_qa_groups(r.reborn_qa_cases, run_url)[:remaining])
 
     # Cross-lane "Summary by Category" block — only emitted when there
     # are >=2 failures (with 1 the per-lane block is already enough).
-    if category_summary and len(blocks) + 2 <= SLACK_MAX_BLOCKS:
+    if category_summary and len(blocks) + 2 <= REPORT_MAX_SECTIONS:
         blocks.append({"type": "divider"})
         blocks.append(
             {
@@ -1106,9 +1113,19 @@ def slack_payload(
         ctx.append(f"commit `{commit[:7]}`")
     if run_url:
         ctx.append(f"<{run_url}|GitHub run>")
-    if ctx and len(blocks) < SLACK_MAX_BLOCKS:
+    if ctx and len(blocks) < REPORT_MAX_SECTIONS:
         blocks.append({"type": "context", "elements": [{"type": "mrkdwn", "text": " • ".join(ctx)}]})
-    return {"blocks": blocks}
+    attachments = []
+    for block in blocks[1:]:
+        if block.get("type") == "context":
+            text = " • ".join(element["text"] for element in block.get("elements", []))
+        elif block.get("type") == "divider":
+            continue
+        else:
+            text = block.get("text", {}).get("text", "")
+        if text:
+            attachments.append({"text": _mattermost_markdown(text)})
+    return {"text": header, "attachments": attachments}
 
 
 def _markdown_run_context_lines(
@@ -1328,7 +1345,7 @@ def github_comment_body(
         lines.extend(detail_lines)
 
     lines.append("")
-    lines.append("_Auto-posted by `scripts/live-canary/notify_slack.py`._")
+    lines.append("_Auto-posted by `scripts/live-canary/notify_mattermost.py`._")
     body = "\n".join(lines)
     if len(body) <= GITHUB_COMMENT_BODY_LIMIT:
         return body
@@ -1381,7 +1398,7 @@ def post_pr_comment(
 def categorize_failures(api_key: str, reports: list[LaneReport]) -> str:
     """Second-pass Haiku call: group failed lanes by shared root cause.
 
-    Returns a multi-line markdown string ready to paste into a Slack
+    Returns a multi-line markdown string ready to paste into a Mattermost
     section block. Empty string if no failures or fewer than 2 (the
     per-lane block already conveys a single failure clearly without
     a category summary).
@@ -1431,9 +1448,9 @@ def categorize_failures(api_key: str, reports: list[LaneReport]) -> str:
     if not isinstance(categories, list) or not categories:
         return ""
 
-    # Render as a Slack-friendly bulleted block — Slack's mrkdwn
+    # Render as a Mattermost-friendly bulleted block — Mattermost's mrkdwn
     # doesn't support actual tables, so we fall back to a pretty
-    # itemized list. Keeps the Slack message <=3000 chars per block.
+    # itemized list. Keeps the Mattermost message <=3000 chars per block.
     lines: list[str] = []
     for entry in categories:
         if not isinstance(entry, dict):
@@ -1510,7 +1527,7 @@ def create_canary_issues(
             body_lines.append(f"**Run:** {run_url}")
         body_lines.append("")
         body_lines.append(
-            "_Auto-opened by `scripts/live-canary/notify_slack.py`. "
+            "_Auto-opened by `scripts/live-canary/notify_mattermost.py`. "
             "Will be re-used on subsequent runs that hit the same "
             "failing test — close when fixed or convert to a "
             "tracking issue._"
@@ -1569,7 +1586,7 @@ def create_canary_issues(
                 out.append(created.get("html_url", ""))
         except Exception as e:
             print(
-                f"[notify_slack] github issue create/update failed for "
+                f"[notify_mattermost] github issue create/update failed for "
                 f"{r.lane}: {type(e).__name__}: {e}",
                 file=sys.stderr,
             )
@@ -1612,7 +1629,7 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--artifacts-dir", default="artifacts/live-canary",
                    help="root of downloaded lane artifacts")
-    p.add_argument("--slack-webhook", default=os.environ.get("SLACK_WEBHOOK_URL"))
+    p.add_argument("--mattermost-webhook", default=os.environ.get("MATTERMOST_WEBHOOK_URL"))
     p.add_argument("--anthropic-api-key", default=os.environ.get("ANTHROPIC_API_KEY"))
     p.add_argument("--run-url", default=os.environ.get("CANARY_RUN_URL"))
     p.add_argument("--commit", default=os.environ.get("GITHUB_SHA"))
@@ -1652,7 +1669,7 @@ def main() -> int:
         ),
     )
     p.add_argument("--dry-run", action="store_true",
-                   help="print the Slack payload to stdout instead of posting")
+                   help="print the Mattermost payload to stdout instead of posting")
     args = p.parse_args()
 
     artifacts_root = Path(args.artifacts_dir)
@@ -1661,11 +1678,11 @@ def main() -> int:
         os.environ.get("REBORN_GOOGLE_OAUTH_PREFLIGHT_STATUS", "")
     )
     if not lane_dirs and preflight_report is None:
-        print(f"[notify_slack] no lane artifacts under {artifacts_root}", file=sys.stderr)
+        print(f"[notify_mattermost] no lane artifacts under {artifacts_root}", file=sys.stderr)
         return 0
 
     print(
-        f"[notify_slack] discovered {len(lane_dirs)} lane dir(s): "
+        f"[notify_mattermost] discovered {len(lane_dirs)} lane dir(s): "
         f"{', '.join(d.parts[-3] + '/' + d.parts[-2] for d in lane_dirs)}",
         file=sys.stderr,
     )
@@ -1676,7 +1693,7 @@ def main() -> int:
         if r is not None:
             reports.append(r)
             print(
-                f"[notify_slack]   {r.lane}/{r.provider}: "
+                f"[notify_mattermost]   {r.lane}/{r.provider}: "
                 f"tests={r.tests} passed={r.passed} failed={r.failed} "
                 f"skipped={r.skipped} status={r.status}",
                 file=sys.stderr,
@@ -1692,17 +1709,17 @@ def main() -> int:
             if not r.notable.startswith("haiku "):
                 haiku_enriched += 1
         print(
-            f"[notify_slack] haiku enriched {haiku_enriched}/{len(reports)} lane(s)",
+            f"[notify_mattermost] haiku enriched {haiku_enriched}/{len(reports)} lane(s)",
             file=sys.stderr,
         )
     else:
-        print("[notify_slack] no ANTHROPIC_API_KEY — skipping haiku enrichment",
+        print("[notify_mattermost] no ANTHROPIC_API_KEY — skipping haiku enrichment",
               file=sys.stderr)
 
     if preflight_report is not None:
         reports.append(preflight_report)
         print(
-            "[notify_slack] added Reborn Google OAuth infrastructure failure: "
+            "[notify_mattermost] added Reborn Google OAuth infrastructure failure: "
             f"{preflight_report.error}",
             file=sys.stderr,
         )
@@ -1715,7 +1732,7 @@ def main() -> int:
         category_summary = categorize_failures(args.anthropic_api_key, reports)
         if category_summary:
             print(
-                "[notify_slack] generated cross-lane category summary",
+                "[notify_mattermost] generated cross-lane category summary",
                 file=sys.stderr,
             )
 
@@ -1726,7 +1743,7 @@ def main() -> int:
         target_branch=os.environ.get("CANARY_TARGET_BRANCH", ""),
         target_ref=os.environ.get("CANARY_TARGET_REF", ""),
     )
-    payload = slack_payload(
+    payload = mattermost_payload(
         reports,
         args.run_url,
         args.commit,
@@ -1741,7 +1758,7 @@ def main() -> int:
         if args.create_issues and args.github_token:
             failed = [r for r in reports if _has_blocking_failure(r)]
             print(
-                f"[notify_slack] (dry-run) would open / update "
+                f"[notify_mattermost] (dry-run) would open / update "
                 f"{len(failed)} issue(s) on {args.repo}",
                 file=sys.stderr,
             )
@@ -1759,22 +1776,22 @@ def main() -> int:
             )
         return 0
 
-    if args.slack_webhook:
+    if args.mattermost_webhook:
         try:
-            post_json(args.slack_webhook, payload, {}, timeout=10)
+            post_json(args.mattermost_webhook, payload, {}, timeout=10)
             print(
-                f"[notify_slack] posted Slack message for {len(reports)} lane(s)",
+                f"[notify_mattermost] posted Mattermost message for {len(reports)} lane(s)",
                 file=sys.stderr,
             )
         except Exception as e:
-            print(f"[notify_slack] slack post failed: {e} — sending fallback", file=sys.stderr)
+            print(f"[notify_mattermost] Mattermost post failed ({type(e).__name__}) — sending fallback", file=sys.stderr)
             try:
-                post_json(args.slack_webhook, fallback_payload(reports, args.run_url), {}, timeout=10)
-                print("[notify_slack] fallback posted", file=sys.stderr)
+                post_json(args.mattermost_webhook, fallback_payload(reports, args.run_url), {}, timeout=10)
+                print("[notify_mattermost] fallback posted", file=sys.stderr)
             except Exception as e2:
-                print(f"[notify_slack] fallback also failed: {e2}", file=sys.stderr)
+                print(f"[notify_mattermost] fallback also failed ({type(e2).__name__})", file=sys.stderr)
     else:
-        print("[notify_slack] no SLACK_WEBHOOK_URL — skipping Slack post", file=sys.stderr)
+        print("[notify_mattermost] no MATTERMOST_WEBHOOK_URL — skipping Mattermost post", file=sys.stderr)
 
     if args.post_pr_comment and run_context.target_pr and args.github_token:
         try:
@@ -1788,22 +1805,22 @@ def main() -> int:
                 category_summary=category_summary,
             )
             print(
-                f"[notify_slack] posted PR canary comment: {comment_url or '?'}",
+                f"[notify_mattermost] posted PR canary comment: {comment_url or '?'}",
                 file=sys.stderr,
             )
         except Exception as e:
             print(
-                f"[notify_slack] PR comment post failed: {type(e).__name__}: {e}",
+                f"[notify_mattermost] PR comment post failed: {type(e).__name__}: {e}",
                 file=sys.stderr,
             )
     elif args.post_pr_comment and run_context.target_pr:
         print(
-            "[notify_slack] --post-pr-comment set but no GITHUB_TOKEN / "
+            "[notify_mattermost] --post-pr-comment set but no GITHUB_TOKEN / "
             "GH_TOKEN / CANARY_ISSUES_TOKEN — skipping PR comment",
             file=sys.stderr,
         )
 
-    # Issue creation runs AFTER Slack so a Slack-side failure doesn't
+    # Issue creation runs AFTER Mattermost so a Mattermost-side failure doesn't
     # block the GitHub-side bookkeeping (and vice versa).
     if args.create_issues and args.github_token:
         urls = create_canary_issues(
@@ -1815,13 +1832,13 @@ def main() -> int:
         )
         if urls:
             print(
-                f"[notify_slack] created/updated {len(urls)} canary issue(s):"
+                f"[notify_mattermost] created/updated {len(urls)} canary issue(s):"
                 f" {', '.join(urls)}",
                 file=sys.stderr,
             )
     elif args.create_issues:
         print(
-            "[notify_slack] --create-issues set but no GITHUB_TOKEN / "
+            "[notify_mattermost] --create-issues set but no GITHUB_TOKEN / "
             "GH_TOKEN / CANARY_ISSUES_TOKEN — skipping issue creation",
             file=sys.stderr,
         )

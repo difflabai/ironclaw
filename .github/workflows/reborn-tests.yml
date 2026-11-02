@@ -173,7 +173,7 @@ jobs:
           # pushes to main ONLY. PR and merge-queue lanes run plain
           # (uninstrumented) tests — llvm-cov overhead was a large share of
           # the ~hour cycle — and a post-merge coverage breach lands as a red
-          # main run that main-ci-slack-alerts.yml announces, fixed forward.
+          # main run that main-ci-mattermost-alerts.yml announces, fixed forward.
           run_coverage="$(jq -r '.coverage_mode == "full"' <<< "${plan}")"
           if [[ "${{ github.event_name }}" != "push" ]]; then
             run_coverage=false
@@ -913,7 +913,7 @@ jobs:
         # the worst feedback shape the program has. It still RUNS on both
         # lanes for visibility (step summary, sticky comment, and this step's
         # red annotation), and it ENFORCES on pushes to main, where
-        # main-ci-slack-alerts.yml surfaces a breach. The aggregate and
+        # main-ci-mattermost-alerts.yml surfaces a breach. The aggregate and
         # per-crate coverage floors are untouched and still gate everywhere
         # they always did.
         continue-on-error: ${{ github.event_name != 'push' }}

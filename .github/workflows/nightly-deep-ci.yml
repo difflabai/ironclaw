@@ -146,5 +146,5 @@ jobs:
           retention-days: 14
 
 # Failure reporting: nightly-watchdog.yml checks this workflow's latest
-# scheduled run from outside and posts failures to Slack. An in-run alert
+# scheduled run from outside and posts failures to Mattermost. An in-run alert
 # job cannot do that — it dies with its own run on a startup_failure.

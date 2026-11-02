@@ -1472,21 +1472,21 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           # Each upstream lane uploads to `live-canary-<lane>` / `live-canary-provider-<provider>`.
-          # Merging into a single artifacts/live-canary/ tree lets notify_slack.py
+          # Merging into a single artifacts/live-canary/ tree lets notify_mattermost.py
           # walk the <lane>/<provider>/<timestamp>/ layout it already expects.
           pattern: live-canary-*
           path: artifacts/live-canary
           merge-multiple: true
-      - name: Generate and post Slack report
-        # Notifier exits 0 even on Slack/Haiku failure (see
-        # notify_slack.py docstring) so a flaky webhook can't fail the
+      - name: Generate and post Mattermost report
+        # Notifier exits 0 even on Mattermost/Haiku failure (see
+        # notify_mattermost.py docstring) so a flaky webhook can't fail the
         # whole canary run. Gated on schedule + workflow_dispatch only —
         # PR-triggered runs (if any) skip the post to keep noise out of
         # the channel.
         if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
           CANARY_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -1502,5 +1502,5 @@ jobs:
           # The notifier is intentionally side-effect-light: it exits 0 even on
           # failure so the canary run's overall status isn't masked by a flaky
           # notification path.
-          python3 scripts/live-canary/notify_slack.py \
+          python3 scripts/live-canary/notify_mattermost.py \
             --artifacts-dir artifacts/live-canary

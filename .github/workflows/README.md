@@ -270,7 +270,7 @@ the configuration:
   through 2026-07-08 — 65 of its 74 retained runs are startup_failures —
   precisely because this failure mode is invisible from inside the run.
   `nightly-watchdog.yml` (08:00 UTC) exists for exactly that: it checks each
-  nightly's latest scheduled run from outside and posts the failure to Slack
+  nightly's latest scheduled run from outside and posts the failure to Mattermost
   even when the run itself never started.
 
 ### Nightly alerting
@@ -281,7 +281,7 @@ Playwright, IronClaw Stress. A
 run that is missing, stale (>26h: the cron didn't fire),
 or concluded anything but success posts a failure line (workflow, conclusion,
 failed job names, run link) to the Slack channel behind
-`secrets.SLACK_WEBHOOK_URL` — the same webhook the live-canary report uses —
+`secrets.MATTERMOST_WEBHOOK_URL` — the same webhook the live-canary report uses —
 and turns that watchdog matrix job red, so the watchdog's own run history is
 the failure record. Successes post nothing, and there is no GitHub-issue
 trail: the former in-run alert jobs and `nightly-alert-issue.sh` were removed
@@ -290,23 +290,23 @@ own run on a startup_failure and can never see a cron that didn't fire.
 
 ### Main branch and merge-queue alerting
 
-`main-ci-slack-alerts.yml` watches completed `workflow_run` events for the
+`main-ci-mattermost-alerts.yml` watches completed `workflow_run` events for the
 current `push` to `main` and `merge_group` workflows: Code Style, Tests
 (Reborn), Reborn E2E, Platform & Compat, Replay Snapshot Gate, Code Coverage,
 nearai-bench dispatcher tests, and Release-plz. Any watched run that concludes
-`failure`, `timed_out`, `action_required`, or `startup_failure` posts a Slack
+`failure`, `timed_out`, `action_required`, or `startup_failure` posts a Mattermost
 message with the workflow, conclusion, failed job and step names, available
 failure annotations, commit, actor, and run link. Merge-queue alerts also
 resolve the PR number from GitHub's `gh-readonly-queue/main/pr-<number>-...`
 ref and include the PR title, author, and link.
 
-Main-branch alerts go to `secrets.MAIN_CI_SLACK_WEBHOOK_URLS`; the value may be
+Main-branch alerts go to `secrets.MAIN_CI_MATTERMOST_WEBHOOK_URLS`; the value may be
 a single webhook URL or multiple URLs separated by newlines or commas.
-Merge-queue alerts go to `secrets.SLACK_WEBHOOK_URL`, the existing live-canary
+Merge-queue alerts go to `secrets.MATTERMOST_WEBHOOK_URL`, the existing live-canary
 channel. This keeps post-merge CI alerts in their dedicated channels while
 making queue bounces visible alongside live-canary failures.
 When adding a new workflow that runs on `push` to `main`, add its workflow
-`name:` to the watched list in `main-ci-slack-alerts.yml`.
+`name:` to the watched list in `main-ci-mattermost-alerts.yml`.
 
 Code Coverage uses same-ref concurrency with cancellation. When merges land
 faster than coverage completes, only the newest cumulative `main` commit keeps

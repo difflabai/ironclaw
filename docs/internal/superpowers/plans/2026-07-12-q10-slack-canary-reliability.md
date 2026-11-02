@@ -252,8 +252,8 @@ git commit -m "fix(canary): observe terminal model failures"
 - Modify: scripts/reborn_webui_v2_live_qa/case_matrix.py
 - Modify: scripts/reborn_webui_v2_live_qa/run_live_qa.py
 - Modify: scripts/reborn_webui_v2_live_qa/test_run_live_qa.py
-- Modify: scripts/live-canary/notify_slack.py
-- Modify: scripts/live-canary/test_notify_slack.py
+- Modify: scripts/live-canary/notify_mattermost.py
+- Modify: scripts/live-canary/test_notify_mattermost.py
 
 **Interfaces:**
 - Produces: CaseSpec.tier in contract/behavioral and CaseSpec.blocking.
@@ -297,7 +297,7 @@ QA-9A, QA-9B, and QA-9D remain blocking contracts.
 A behavioral failure must render as a warning, preserve its failure message and tool trace, not increment blocking failures, not create a canary issue, and preserve PR/SHA context.
 
 ~~~bash
-python3 scripts/live-canary/test_notify_slack.py
+python3 scripts/live-canary/test_notify_mattermost.py
 ~~~
 
 Expected: behavioral failure is counted as blocking or warning fields are absent.
@@ -310,12 +310,12 @@ Extend RebornQaCaseReport/LaneReport and parser/rendering paths. Structured meta
 
 ~~~bash
 python3 scripts/reborn_webui_v2_live_qa/test_run_live_qa.py
-python3 scripts/live-canary/test_notify_slack.py
+python3 scripts/live-canary/test_notify_mattermost.py
 python3 scripts/live-canary/test_run_dispatch.py
 git add scripts/reborn_webui_v2_live_qa/case_matrix.py \
   scripts/reborn_webui_v2_live_qa/run_live_qa.py \
   scripts/reborn_webui_v2_live_qa/test_run_live_qa.py \
-  scripts/live-canary/notify_slack.py scripts/live-canary/test_notify_slack.py
+  scripts/live-canary/notify_mattermost.py scripts/live-canary/test_notify_mattermost.py
 git commit -m "fix(canary): classify behavioral and infrastructure results"
 ~~~
 
@@ -439,7 +439,7 @@ cargo test --test reborn_qa_recorded_behavior --features libsql -- --nocapture
 
 ~~~bash
 python3 scripts/reborn_webui_v2_live_qa/test_run_live_qa.py
-python3 scripts/live-canary/test_notify_slack.py
+python3 scripts/live-canary/test_notify_mattermost.py
 python3 scripts/live-canary/test_run_dispatch.py
 (cd crates/ironclaw_webui/frontend && \
   node --test --import tsx src/pages/chat/components/message-bubble.test.ts)

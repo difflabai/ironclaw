@@ -506,7 +506,7 @@ class RebornPrTestPlanTests(unittest.TestCase):
     def test_live_qa_harness_changes_run_only_qa_replay(self) -> None:
         for path in (
             "scripts/live-canary/README.md",
-            "scripts/live-canary/notify_slack.py",
+            "scripts/live-canary/notify_mattermost.py",
             "scripts/reborn_webui_v2_live_qa/run_live_qa.py",
             # WS10 (2026-08-04): the QA surface-inventory auditor and its
             # self-test are the same class of offline QA tooling, and were

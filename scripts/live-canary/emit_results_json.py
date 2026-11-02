@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Scrape `cargo test --nocapture` output into a results.json file that
-notify_slack.py::parse_results_json can already consume.
+notify_mattermost.py::parse_results_json can already consume.
 
 Invoked from scripts/live-canary/run.sh at the end of every cargo-based
 lane. Skipped (early-exits as no-op) when:
@@ -27,7 +27,7 @@ entirely.
 
 Per-test latency is unknowable from cargo's plain stdout, so we leave
 ``latency_ms`` at 0 and put the lane-level wall-clock duration on a
-single ``meta`` entry consumed only by future tooling. notify_slack.py
+single ``meta`` entry consumed only by future tooling. notify_mattermost.py
 sums ``latency_ms`` per entry so the 0 values are harmless — lane-level
 duration is captured by the workflow itself.
 """
